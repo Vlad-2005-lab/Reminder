@@ -11,7 +11,13 @@ import pytz
 from emoji import emojize
 import threading
 import schedule
+import yadisk
 
+yandex_disk = yadisk.YaDisk(token="AQAAAAA1zbBwAAdMqNcOyvthqEaaltCqQTkwV8s")
+try:
+    yandex_disk.download("my.sqlite", "bd/my.sqlite")
+except Exception:
+    yandex_disk.upload("bd/my.sqlite", "my.sqlite")
 try:
     db_session.global_init("bd/my.sqlite")
 except Exception:
@@ -596,6 +602,17 @@ def callback_worker(call):
         text.append(f"Задача №{nomer}")
         text.append(f"Назавние: {task.name}")
         text.append(f"Дата напоминания: {task.time}")
+        user = session.query(User).filter(User.tg_id == task.tg_id).first()
+        try:
+            min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
+        except Exception:
+            min_time = datetime.datetime.fromtimestamp(float(task.time), timezone.utc)
+        min_time = min_time.replace(tzinfo=pytz.utc)
+        min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        utcmoment_naive = datetime.datetime.utcnow()
+        utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
+        time_now = utcmoment.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        text.append(f"Осталось: {min_time - time_now}")
         buttons = buttons_creator({"1": {'Изменить название': 'change_name',
                                          'Изменить дату': 'change_date',
                                          f'{emojize(SMILE[2], use_aliases=True)}': "delete"},
@@ -606,11 +623,55 @@ def callback_worker(call):
 
 
 def check_tasks():
-    pass
+    session = db_session.create_session()
+    tasks = session.query(Task).all()
+    for task in tasks:
+        user = session.query(User).filter(User.tg_id == task.tg_id).first()
+        try:
+            last_time = datetime.datetime.strptime(str(task.last_time), '%Y-%m-%d %H:%M:%S.%f%z')
+        except Exception:
+            last_time = datetime.datetime.fromtimestamp(float(task.last_time), timezone.utc)
+        try:
+            min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
+        except Exception:
+            min_time = datetime.datetime.fromtimestamp(float(task.time), timezone.utc)
+        min_time = min_time.replace(tzinfo=pytz.utc)
+        min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        utcmoment_naive = datetime.datetime.utcnow()
+        utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
+        time_now = utcmoment.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        text = []
+        text.append(f"Название: {task.name}")
+        text.append(f"Дата: {task.time}")
+        text.append(f"Осталось: {min_time - time_now}")
+        text = "\n".join(text)
+        if (min_time - time_now).days >= 1 and (time_now - last_time).days >= 1 and (
+                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+            bot.send_message(user.tg_id, text)
+        elif (min_time - time_now).days == 0 and (time_now - last_time).seconds >= 60 * 60 * 6 and (
+                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+            bot.send_message(user.tg_id, text)
+        elif (min_time - time_now).seconds <= 60 * 60 * 12 and (time_now - last_time).seconds >= 60 * 60 * 3 and (
+                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+            bot.send_message(user.tg_id, text)
+        elif (min_time - time_now).seconds <= 60 * 60 * 5 and (time_now - last_time).seconds >= 60 * 60 and (
+                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+            bot.send_message(user.tg_id, text)
+        elif (min_time - time_now).seconds <= 60 * 60 and (time_now - last_time).seconds >= 60 * 30 and (
+                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+            bot.send_message(user.tg_id, text)
+
+
+def upload_bd():
+    if yandex_disk.exists("my.sqlite"):
+        yandex_disk.remove("my.sqlite")
+    yandex_disk.upload("bd/my.sqlite", "my.sqlite")
+    print("db uploaded")
 
 
 def start_chek():
-    schedule.every().minute.do(check_tasks)
+    schedule.every(30).seconds.do(check_tasks)
+    schedule.every(5).minutes.do(upload_bd)
     while True:
         schedule.run_pending()
         time.sleep(1)
