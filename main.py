@@ -490,7 +490,8 @@ def main_menu(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.isdigit() or call.data in ["back", "next", "return", "delete",
-                                                                                   "change_name", "change_date"])
+                                                                                   "change_name", "change_date",
+                                                                                   "home"])
 def callback_worker(call):
     session = db_session.create_session()
     text = call.message.text.split("\n")
@@ -598,6 +599,8 @@ def callback_worker(call):
             key_dict["1"][">"] = "next"
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
                               reply_markup=buttons_creator(key_dict))
+    elif call.data == "home":
+        bot.send_message(call.message.chat.id, f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}")
     elif call.data == "delete":
         list_poiska = session.query(Task).filter(Task.tg_id == call.message.chat.id).all()
         key_dict = {"1": {}}
@@ -615,9 +618,10 @@ def callback_worker(call):
             text = [
                 f"Страница {nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1} из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}",
                 ""]
-            for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
-                    nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
-                list_poiska) != 5 else 5):
+            for i in range(
+                    (5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
+                            nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
+                        list_poiska) != 5 else 5):
                 nomer1 = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
                 try:
                     min_time = datetime.datetime.strptime(str(list_poiska[nomer1 * 5 + i].time), '%H:%M %d.%m.%Y')
@@ -629,9 +633,10 @@ def callback_worker(call):
                 string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {str(min_time).split('+')[0]}"
                 text.append(string)
             text = "\n".join(text)
-            for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
-                    nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
-                list_poiska) != 5 else 5):
+            for i in range(
+                    (5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
+                            nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
+                        list_poiska) != 5 else 5):
                 hz = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
                 key_dict["1"][f"{hz * 5 + i + 1}"] = f"{hz * 5 + i + 1}"
             if len(list_poiska) > 5:
@@ -640,13 +645,9 @@ def callback_worker(call):
                                   reply_markup=buttons_creator(key_dict))
         else:
             user = session.query(User).filter(call.message.chat.id == User.tg_id).first()
-            keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
-                                         ["Изменить часовой пояс",
-                                          f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
-                                         "Удалить аккаунт"])
             bot.edit_message_text("У вас нет напоминаний", call.message.chat.id, call.message.message_id,
-                                  reply_markup=types.ReplyKeyboardRemove())
-            bot.send_message(call.message.chat.id, f"вы в главном меню", reply_markup=keyboard)
+                                  reply_markup=buttons_creator(
+                                      {"1": {f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}": "home"}}))
     elif call.data == "change_name":
         bot.send_message(call.message.chat.id, f"Эта функция находится в разработке")
     elif call.data == "change_date":
