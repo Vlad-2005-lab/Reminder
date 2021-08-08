@@ -697,10 +697,12 @@ def check_tasks():
                 bot.send_message(task.tg_id, text)
                 task.last_time = time_now
                 session.commit()
-            elif (min_time - time_now).seconds <= 0:
+            elif time_now > min_time:
                 text = [f"Истекло время у напоминания:\n{task.name}\n", "Удачи"]
                 text = "\n".join(text)
                 bot.send_message(task.tg_id, text)
+                bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
+                bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
                 bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
                 session.delete(task)
                 session.commit()
@@ -743,7 +745,7 @@ def upload_bd():
 
 
 def start_chek():
-    schedule.every(10).seconds.do(check_tasks)
+    schedule.every(30).seconds.do(check_tasks)
     schedule.every(5).minutes.do(upload_bd)
     while True:
         schedule.run_pending()
