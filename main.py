@@ -600,7 +600,12 @@ def callback_worker(call):
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
                               reply_markup=buttons_creator(key_dict))
     elif call.data == "home":
-        bot.send_message(call.message.chat.id, f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}")
+        user = session.query(User).filter(User.tg_id == call.message.chat.id).first()
+        keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
+                                     ["Изменить часовой пояс",
+                                      f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
+                                     "Удалить аккаунт"])
+        bot.send_message(call.message.chat.id, f"Вы в главном меню", reply_markup=keyboard)
     elif call.data == "delete":
         list_poiska = session.query(Task).filter(Task.tg_id == call.message.chat.id).all()
         key_dict = {"1": {}}
