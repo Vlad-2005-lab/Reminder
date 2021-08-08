@@ -302,7 +302,7 @@ def task_user(message):
     user.list_of_tasks = ' '.join((user.list_of_tasks.split() + [str(task.id)]))
     session.commit()
     bot.send_message(message.from_user.id,
-                     f"Введите дату в формате: часы:минуты день.месяц.год",
+                     f"Введите дату в формате: часы:минуты день.месяц.год(20:20 15:09:2021)",
                      reply_markup=types.ReplyKeyboardRemove())
     return bot.register_next_step_handler(message, time_task)
 
@@ -324,13 +324,15 @@ def time_task(message):
         #     last_time = datetime.datetime.strptime(str(task.last_time), '%Y-%m-%d %H:%M:%S.%f%z')
         # except Exception:
         #     last_time = datetime.datetime.fromtimestamp(float(task.last_time), timezone.utc)
-        if 0 <= hours[0] <= 23 and 0 <= hours[1] <= 59 and (
+        if len(str(date[2])) == 4 and 0 <= hours[0] <= 23 and 0 <= hours[1] <= 59 and (
                 1 <= date[0] <= 31 and date[1] in [1, 3, 5, 7, 8, 10, 12] or 1 <= date[0] <= 30 and date[1] in [4, 6, 9,
                                                                                                                 11] or 1 <=
                 date[0] <= 29 and date[1] == 2) and 1 <= date[1] <= 12:
             if get_delta((datetime.datetime(date[2], date[1], date[0], hours[0], hours[1],
                                             tzinfo=pytz.timezone(timezones[user.time_zone - 2])) - time_now)) > 0:
-                task.time = message.text
+                huj = datetime.datetime(date[2], date[1], date[0], hours[0], hours[1])
+                huj = datetime.datetime.fromtimestamp(huj.timestamp() - 3600 * user.time_zone)
+                task.time = f"{huj.hour}:{huj.minute} {huj.day}.{huj.month}.{huj.year}"
                 task.last_time = time_now
                 session.commit()
                 keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
@@ -344,6 +346,12 @@ def time_task(message):
                                  f"Вы в главном меню",
                                  reply_markup=keyboard)
                 return bot.register_next_step_handler(message, main_menu)
+            else:
+                print("+")
+                bot.send_message(message.from_user.id,
+                                 f"Вы ввели не правильно дату.\nВведите дату в формате: часы:минуты день.месяц.год",
+                                 reply_markup=types.ReplyKeyboardRemove())
+                return bot.register_next_step_handler(message, time_task)
         else:
             bot.send_message(message.from_user.id,
                              f"Вы ввели не правильно дату.\nВведите дату в формате: часы:минуты день.месяц.год",
@@ -406,7 +414,13 @@ def main_menu(message):
         text = f"Страница 1 из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}\n\n"
         _list = []
         for i in range(5 if len(list_poiska) >= 5 else len(list_poiska) % 5):
-            string = f"{1 + i}. {list_poiska[i].name}\nДата: {list_poiska[i].time}"
+            try:
+                min_time = datetime.datetime.strptime(str(list_poiska[i].time), '%H:%M %d.%m.%Y')
+            except Exception:
+                min_time = datetime.datetime.fromtimestamp(float(list_poiska[i].time), timezone.utc)
+            min_time = min_time.replace(tzinfo=pytz.utc)
+            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+            string = f"{1 + i}. {list_poiska[i].name}\nДата: {str(min_time).split('+')[0]}"
             _list.append(string)
         text += "\n".join(_list)
         for i in range(1, len(_list) + 1):
@@ -548,7 +562,14 @@ def callback_worker(call):
                 nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
             list_poiska) != 5 else 5):
             nomer1 = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
-            string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {list_poiska[nomer1 * 5 + i].time}"
+            try:
+                min_time = datetime.datetime.strptime(str(list_poiska[nomer1 * 5 + i].time), '%H:%M %d.%m.%Y')
+            except Exception:
+                min_time = datetime.datetime.fromtimestamp(float(list_poiska[nomer1 * 5 + i].time), timezone.utc)
+            min_time = min_time.replace(tzinfo=pytz.utc)
+            user = session.query(User).filter(User.tg_id == list_poiska[nomer1 * 5 + i].tg_id).first()
+            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+            string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {str(min_time).split('+')[0]}"
             text.append(string)
         text = "\n".join(text)
         for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
@@ -566,6 +587,8 @@ def callback_worker(call):
         nomer = int(text[0].split()[1][1:])
         session.delete(list_poiska[nomer - 1])
         nomer -= 1
+        if nomer <= 0:
+            nomer = 1
         session.commit()
         list_poiska = session.query(Task).filter(Task.tg_id == call.message.chat.id).all()
         if len(list_poiska) > 5:
@@ -578,7 +601,14 @@ def callback_worker(call):
                 nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
             list_poiska) != 5 else 5):
             nomer1 = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
-            string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {list_poiska[nomer1 * 5 + i].time}"
+            try:
+                min_time = datetime.datetime.strptime(str(list_poiska[nomer1 * 5 + i].time), '%H:%M %d.%m.%Y')
+            except Exception:
+                min_time = datetime.datetime.fromtimestamp(float(list_poiska[nomer1 * 5 + i].time), timezone.utc)
+            min_time = min_time.replace(tzinfo=pytz.utc)
+            user = session.query(User).filter(User.tg_id == list_poiska[nomer1 * 5 + i].tg_id).first()
+            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+            string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {str(min_time).split('+')[0]}"
             text.append(string)
         text = "\n".join(text)
         for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
@@ -601,7 +631,14 @@ def callback_worker(call):
         text = []
         text.append(f"Задача №{nomer}")
         text.append(f"Назавние: {task.name}")
-        text.append(f"Дата напоминания: {task.time}")
+        try:
+            min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
+        except Exception:
+            min_time = datetime.datetime.fromtimestamp(float(task.time), timezone.utc)
+        min_time = min_time.replace(tzinfo=pytz.utc)
+        user = session.query(User).filter(User.tg_id == task.tg_id).first()
+        min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        text.append(f"Дата напоминания: {str(min_time).split('+')[0]}")
         user = session.query(User).filter(User.tg_id == task.tg_id).first()
         try:
             min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
@@ -612,6 +649,7 @@ def callback_worker(call):
         utcmoment_naive = datetime.datetime.utcnow()
         utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
         time_now = utcmoment.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+        print(min_time, time_now, min_time - time_now)
         text.append(f"Осталось: {min_time - time_now}")
         buttons = buttons_creator({"1": {'Изменить название': 'change_name',
                                          'Изменить дату': 'change_date',
@@ -626,40 +664,43 @@ def check_tasks():
     session = db_session.create_session()
     tasks = session.query(Task).all()
     for task in tasks:
-        user = session.query(User).filter(User.tg_id == task.tg_id).first()
         try:
-            last_time = datetime.datetime.strptime(str(task.last_time), '%Y-%m-%d %H:%M:%S.%f%z')
-        except Exception:
-            last_time = datetime.datetime.fromtimestamp(float(task.last_time), timezone.utc)
-        try:
-            min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
-        except Exception:
-            min_time = datetime.datetime.fromtimestamp(float(task.time), timezone.utc)
-        min_time = min_time.replace(tzinfo=pytz.utc)
-        min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
-        utcmoment_naive = datetime.datetime.utcnow()
-        utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
-        time_now = utcmoment.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
-        text = []
-        text.append(f"Название: {task.name}")
-        text.append(f"Дата: {task.time}")
-        text.append(f"Осталось: {min_time - time_now}")
-        text = "\n".join(text)
-        if (min_time - time_now).days >= 1 and (time_now - last_time).days >= 1 and (
-                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-            bot.send_message(user.tg_id, text)
-        elif (min_time - time_now).days == 0 and (time_now - last_time).seconds >= 60 * 60 * 6 and (
-                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-            bot.send_message(user.tg_id, text)
-        elif (min_time - time_now).seconds <= 60 * 60 * 12 and (time_now - last_time).seconds >= 60 * 60 * 3 and (
-                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-            bot.send_message(user.tg_id, text)
-        elif (min_time - time_now).seconds <= 60 * 60 * 5 and (time_now - last_time).seconds >= 60 * 60 and (
-                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-            bot.send_message(user.tg_id, text)
-        elif (min_time - time_now).seconds <= 60 * 60 and (time_now - last_time).seconds >= 60 * 30 and (
-                (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-            bot.send_message(user.tg_id, text)
+            user = session.query(User).filter(User.tg_id == task.tg_id).first()
+            try:
+                last_time = datetime.datetime.strptime(str(task.last_time), '%Y-%m-%d %H:%M:%S.%f%z')
+            except Exception:
+                last_time = datetime.datetime.fromtimestamp(float(task.last_time), timezone.utc)
+            try:
+                min_time = datetime.datetime.strptime(str(task.time), '%H:%M %d.%m.%Y')
+            except Exception:
+                min_time = datetime.datetime.fromtimestamp(float(task.time), timezone.utc)
+            min_time = min_time.replace(tzinfo=pytz.utc)
+            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+            utcmoment_naive = datetime.datetime.utcnow()
+            utcmoment = utcmoment_naive.replace(tzinfo=pytz.utc)
+            time_now = utcmoment.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+            text = []
+            text.append(f"Название: {task.name}")
+            text.append(f"Дата: {task.time}")
+            text.append(f"Осталось: {min_time - time_now}")
+            text = "\n".join(text)
+            if (min_time - time_now).days >= 1 and (time_now - last_time).days >= 1 and (
+                    (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+                bot.send_message(user.tg_id, text)
+            elif (min_time - time_now).days == 0 and (time_now - last_time).seconds >= 60 * 60 * 6 and (
+                    (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+                bot.send_message(user.tg_id, text)
+            elif (min_time - time_now).seconds <= 60 * 60 * 12 and (time_now - last_time).seconds >= 60 * 60 * 3 and (
+                    (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+                bot.send_message(user.tg_id, text)
+            elif (min_time - time_now).seconds <= 60 * 60 * 5 and (time_now - last_time).seconds >= 60 * 60 and (
+                    (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+                bot.send_message(user.tg_id, text)
+            elif (min_time - time_now).seconds <= 60 * 60 and (time_now - last_time).seconds >= 60 * 30 and (
+                    (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
+                bot.send_message(user.tg_id, text)
+        except Exception as ex:
+            print(ex)
 
 
 def upload_bd():
@@ -670,7 +711,7 @@ def upload_bd():
 
 
 def start_chek():
-    schedule.every(30).seconds.do(check_tasks)
+    schedule.every(10).seconds.do(check_tasks)
     schedule.every(5).minutes.do(upload_bd)
     while True:
         schedule.run_pending()
