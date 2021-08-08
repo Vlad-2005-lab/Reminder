@@ -412,26 +412,30 @@ def main_menu(message):
         keyboard = keyboard_creator([f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}"])
         bot.send_message(message.from_user.id, f"Начинаем поиск", reply_markup=keyboard)
         list_poiska = session.query(Task).filter(message.from_user.id == Task.tg_id).all()
-        key_dict = {'1': {}}
-        if len(list_poiska) > 5:
-            key_dict["1"]["<"] = "back"
-        text = f"Страница 1 из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}\n\n"
-        _list = []
-        for i in range(5 if len(list_poiska) >= 5 else len(list_poiska) % 5):
-            try:
-                min_time = datetime.datetime.strptime(str(list_poiska[i].time), '%H:%M %d.%m.%Y')
-            except Exception:
-                min_time = datetime.datetime.fromtimestamp(float(list_poiska[i].time), timezone.utc)
-            min_time = min_time.replace(tzinfo=pytz.utc)
-            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
-            string = f"{1 + i}. {list_poiska[i].name}\nДата: {str(min_time).split('+')[0]}"
-            _list.append(string)
-        text += "\n".join(_list)
-        for i in range(1, len(_list) + 1):
-            key_dict["1"][f"{i}"] = f"{i}"
-        if len(list_poiska) > 5:
-            key_dict["1"][">"] = "next"
-        bot.send_message(message.from_user.id, text, reply_markup=buttons_creator(key_dict))
+        if len(list_poiska) != 0:
+            key_dict = {'1': {}}
+            if len(list_poiska) > 5:
+                key_dict["1"]["<"] = "back"
+            text = f"Страница 1 из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}\n\n"
+            _list = []
+            for i in range(5 if len(list_poiska) >= 5 else len(list_poiska) % 5):
+                try:
+                    min_time = datetime.datetime.strptime(str(list_poiska[i].time), '%H:%M %d.%m.%Y')
+                except Exception:
+                    min_time = datetime.datetime.fromtimestamp(float(list_poiska[i].time), timezone.utc)
+                min_time = min_time.replace(tzinfo=pytz.utc)
+                min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+                string = f"{1 + i}. {list_poiska[i].name}\nДата: {str(min_time).split('+')[0]}"
+                _list.append(string)
+            text += "\n".join(_list)
+            for i in range(1, len(_list) + 1):
+                key_dict["1"][f"{i}"] = f"{i}"
+            if len(list_poiska) > 5:
+                key_dict["1"][">"] = "next"
+            bot.send_message(message.from_user.id, text, reply_markup=buttons_creator(key_dict))
+        else:
+            text = "У вас нет напоминаний"
+            bot.send_message(message.from_user.id, text, reply_markup=keyboard_creator(keyboard))
     elif message.text == "Изменить часовой пояс":
         keyboard = keyboard_creator(["МСК - 1, (UTC +2)",
                                      "МСК, (UTC +3)",
