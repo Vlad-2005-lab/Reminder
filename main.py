@@ -285,7 +285,7 @@ def change_utc(message):
                                   f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
                                  "Удалить аккаунт"])
     bot.send_message(message.from_user.id,
-                     f"Ваш пояс сменён на:\nМСК {f'+ {user.time_zone - 3}' if user.time_zone else ''}, " +
+                     f"Ваш пояс сменён на:\nМСК {f'+ {user.time_zone - 3}' if user.time_zone != 3 else ''}, " +
                      f"(UTC +{user.time_zone})",
                      reply_markup=keyboard)
     return bot.register_next_step_handler(message, main_menu)
@@ -608,35 +608,44 @@ def callback_worker(call):
             nomer = 1
         session.commit()
         list_poiska = session.query(Task).filter(Task.tg_id == call.message.chat.id).all()
-        if len(list_poiska) > 5:
-            key_dict["1"]["<"] = "back"
-        text = call.message.text.split("\n")
-        text = [
-            f"Страница {nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1} из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}",
-            ""]
-        for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
-                nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
-            list_poiska) != 5 else 5):
-            nomer1 = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
-            try:
-                min_time = datetime.datetime.strptime(str(list_poiska[nomer1 * 5 + i].time), '%H:%M %d.%m.%Y')
-            except Exception:
-                min_time = datetime.datetime.fromtimestamp(float(list_poiska[nomer1 * 5 + i].time), timezone.utc)
-            min_time = min_time.replace(tzinfo=pytz.utc)
-            user = session.query(User).filter(User.tg_id == list_poiska[nomer1 * 5 + i].tg_id).first()
-            min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
-            string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {str(min_time).split('+')[0]}"
-            text.append(string)
-        text = "\n".join(text)
-        for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
-                nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
-            list_poiska) != 5 else 5):
-            hz = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
-            key_dict["1"][f"{hz * 5 + i + 1}"] = f"{hz * 5 + i + 1}"
-        if len(list_poiska) > 5:
-            key_dict["1"][">"] = "next"
-        bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
-                              reply_markup=buttons_creator(key_dict))
+        if len(list_poiska) > 0:
+            if len(list_poiska) > 5:
+                key_dict["1"]["<"] = "back"
+            text = call.message.text.split("\n")
+            text = [
+                f"Страница {nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1} из {len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1}",
+                ""]
+            for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
+                    nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
+                list_poiska) != 5 else 5):
+                nomer1 = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
+                try:
+                    min_time = datetime.datetime.strptime(str(list_poiska[nomer1 * 5 + i].time), '%H:%M %d.%m.%Y')
+                except Exception:
+                    min_time = datetime.datetime.fromtimestamp(float(list_poiska[nomer1 * 5 + i].time), timezone.utc)
+                min_time = min_time.replace(tzinfo=pytz.utc)
+                user = session.query(User).filter(User.tg_id == list_poiska[nomer1 * 5 + i].tg_id).first()
+                min_time = min_time.astimezone(pytz.timezone(timezones[user.time_zone - 2]))
+                string = f"{nomer1 * 5 + 1 + i}. {list_poiska[nomer1 * 5 + i].name}\nДата: {str(min_time).split('+')[0]}"
+                text.append(string)
+            text = "\n".join(text)
+            for i in range((5 if (len(list_poiska) // 5 if len(list_poiska) % 5 == 0 else len(list_poiska) // 5 + 1) != (
+                    nomer // 5 if nomer % 5 == 0 else nomer // 5 + 1) else len(list_poiska) % 5) if len(
+                list_poiska) != 5 else 5):
+                hz = nomer // 5 - 1 if nomer % 5 == 0 else nomer // 5
+                key_dict["1"][f"{hz * 5 + i + 1}"] = f"{hz * 5 + i + 1}"
+            if len(list_poiska) > 5:
+                key_dict["1"][">"] = "next"
+            bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
+                                  reply_markup=buttons_creator(key_dict))
+        else:
+            user = session.query(User).filter(call.message.chat.id == User.id).first()
+            keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
+                                         ["Изменить часовой пояс",
+                                          f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
+                                         "Удалить аккаунт"])
+            bot.edit_message_text("У вас нет напоминаний", call.message.chat.id, call.message.message_id,
+                                  reply_markup=keyboard)
     elif call.data == "change_name":
         bot.send_message(call.message.chat.id, f"Эта функция находится в разработке")
     elif call.data == "change_date":
