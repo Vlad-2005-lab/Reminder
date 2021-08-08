@@ -29,7 +29,7 @@ count = -1
 history = True
 timezones = ["Europe/Kaliningrad", "Europe/Moscow", "Europe/Samara", "Asia/Yekaterinburg", "Asia/Omsk",
              "Asia/Krasnoyarsk",
-              "Asia/Irkutsk", "Asia/Chita", "Asia/Vladivostok", "Asia/Magadan", "Asia/Anadyr", "Africa/Abidjan"]
+             "Asia/Irkutsk", "Asia/Chita", "Asia/Vladivostok", "Asia/Magadan", "Asia/Anadyr", "Africa/Abidjan"]
 
 
 def log(message=None, where='ne napisal', full=False, comments="None"):
@@ -377,6 +377,8 @@ def check(message):
         bot.send_message(message.from_user.id,
                          f"Досвидания",
                          reply_markup=types.ReplyKeyboardRemove())
+        bot.send_sticker(message.from_user.id,
+                         'CAACAgQAAxkBAAECtLxhD6Cf-LnR6qtYzfUc6xt6lOI93AACQQEAAqghIQavZsYbbe5LiyA')
         return bot.register_next_step_handler(message, get_text_messages)
     elif message.text == "Нет":
         keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
@@ -384,9 +386,10 @@ def check(message):
                                       f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
                                      "Удалить аккаунт"])
         bot.send_message(message.from_user.id,
-                         f"Ваш пояс сменён на:\nМСК {f'+ {user.time_zone - 3}' if user.time_zone else ''}, " +
-                         f"(UTC +{user.time_zone})",
+                         f"Удаление отменено, пользуйтесть нашим ботом дальше",
                          reply_markup=keyboard)
+        bot.send_sticker(message.from_user.id,
+                         'CAACAgQAAxkBAAECtL5hD6DtehBYXgfyvynX_b0MXkNbrQACMwEAAqghIQaDngab6f9thSAE')
         return bot.register_next_step_handler(message, main_menu)
     else:
         keyboard = keyboard_creator([["Да", "Нет"]])
@@ -434,6 +437,10 @@ def main_menu(message):
                 key_dict["1"][">"] = "next"
             bot.send_message(message.from_user.id, text, reply_markup=buttons_creator(key_dict))
         else:
+            keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
+                                         ["Изменить часовой пояс",
+                                          f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
+                                         "Удалить аккаунт"])
             text = "У вас нет напоминаний"
             bot.send_message(message.from_user.id, text, reply_markup=keyboard)
     elif message.text == "Изменить часовой пояс":
@@ -468,6 +475,8 @@ def main_menu(message):
     elif message.text == "Удалить аккаунт":
         keyboard = keyboard_creator([["Да", "Нет"]])
         bot.send_message(message.from_user.id, f"Вы уверены?", reply_markup=keyboard)
+        bot.send_sticker(message.from_user.id,
+                         'CAACAgQAAxkBAAECtMBhD6EKCcwy07V5AAE8TBh3vnIsWAcAAkIBAAKoISEGxyDfTJ2UTDcgBA')
         return bot.register_next_step_handler(message, check)
     elif message.text == f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}":
         bot.send_message(message.from_user.id,
