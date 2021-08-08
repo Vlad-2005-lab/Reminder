@@ -711,8 +711,6 @@ def check_tasks():
                 text = "\n".join(text)
                 bot.send_message(task.tg_id, text)
                 bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
-                bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
-                bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
                 session.delete(task)
                 session.commit()
             elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 and (
