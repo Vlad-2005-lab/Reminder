@@ -367,7 +367,11 @@ def time_task(message):
 def check(message):
     session = db_session.create_session()
     user = session.query(User).filter(User.tg_id == message.from_user.id).first()
+    tasks = session.query(Task).filter(Task.tg_id == user.tg_id).all()
     if message.text == "Да":
+        for task in tasks:
+            session.delete(task)
+            session.commit()
         session.delete(user)
         session.commit()
         bot.send_message(message.from_user.id,
@@ -688,6 +692,13 @@ def check_tasks():
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
                 task.last_time = time_now
+                session.commit()
+            elif (min_time - time_now).seconds <= 0:
+                text = [f"Истекло время у напоминания:\n{task.name}\n", "Удачи"]
+                text = "\n".join(text)
+                bot.send_message(task.tg_id, text)
+                bot.send_sticker(task.tg_id, 'CAACAgQAAxkBAAECtK1hD5nvhj5eh-MvUgWqT17iBCSitgACTgEAAqghIQaryAIOhrVIdyAE')
+                session.delete(task)
                 session.commit()
             elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 and (
                     time_now - last_time).seconds + (
