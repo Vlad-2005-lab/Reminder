@@ -645,7 +645,8 @@ def callback_worker(call):
                                           f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
                                          "Удалить аккаунт"])
             bot.edit_message_text("У вас нет напоминаний", call.message.chat.id, call.message.message_id,
-                                  reply_markup=keyboard)
+                                  reply_markup=types.ReplyKeyboardRemove())
+            bot.send_message(call.message.chat.id, f"вы в главном меню", reply_markup=keyboard)
     elif call.data == "change_name":
         bot.send_message(call.message.chat.id, f"Эта функция находится в разработке")
     elif call.data == "change_date":
