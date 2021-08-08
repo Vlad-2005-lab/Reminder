@@ -687,25 +687,35 @@ def check_tasks():
             if (min_time - time_now).days >= 1 and (time_now - last_time).days >= 1 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
+                task.last_time = time_now
+                session.commit()
             elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 and (
                     time_now - last_time).seconds + (
                     time_now - last_time).days * 3600 * 24 >= 60 * 30 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
+                task.last_time = time_now
+                session.commit()
             elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 * 5 and (
                     time_now - last_time).seconds + (
                     time_now - last_time).days * 3600 * 24 >= 60 * 60 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
+                task.last_time = time_now
+                session.commit()
             elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 * 12 and (
                     time_now - last_time).seconds + (
                     time_now - last_time).days * 3600 * 24 >= 60 * 60 * 3 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
+                task.last_time = time_now
+                session.commit()
             elif (min_time - time_now).days == 0 and (time_now - last_time).seconds + (
                     time_now - last_time).days * 3600 * 24 >= 60 * 60 * 6 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
                 bot.send_message(task.tg_id, text)
+                task.last_time = time_now
+                session.commit()
         except Exception as ex:
             print(ex)
 
