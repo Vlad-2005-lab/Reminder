@@ -686,19 +686,26 @@ def check_tasks():
             text = "\n".join(text)
             if (min_time - time_now).days >= 1 and (time_now - last_time).days >= 1 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-                bot.send_message(user.tg_id, text)
-            elif (min_time - time_now).days == 0 and (time_now - last_time).seconds >= 60 * 60 * 6 and (
+                bot.send_message(task.tg_id, text)
+            elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 and (
+                    time_now - last_time).seconds + (
+                    time_now - last_time).days * 3600 * 24 >= 60 * 30 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-                bot.send_message(user.tg_id, text)
-            elif (min_time - time_now).seconds <= 60 * 60 * 12 and (time_now - last_time).seconds >= 60 * 60 * 3 and (
+                bot.send_message(task.tg_id, text)
+            elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 * 5 and (
+                    time_now - last_time).seconds + (
+                    time_now - last_time).days * 3600 * 24 >= 60 * 60 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-                bot.send_message(user.tg_id, text)
-            elif (min_time - time_now).seconds <= 60 * 60 * 5 and (time_now - last_time).seconds >= 60 * 60 and (
+                bot.send_message(task.tg_id, text)
+            elif (min_time - time_now).seconds + (min_time - time_now).days * 3600 * 24 <= 60 * 60 * 12 and (
+                    time_now - last_time).seconds + (
+                    time_now - last_time).days * 3600 * 24 >= 60 * 60 * 3 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-                bot.send_message(user.tg_id, text)
-            elif (min_time - time_now).seconds <= 60 * 60 and (time_now - last_time).seconds >= 60 * 30 and (
+                bot.send_message(task.tg_id, text)
+            elif (min_time - time_now).days == 0 and (time_now - last_time).seconds + (
+                    time_now - last_time).days * 3600 * 24 >= 60 * 60 * 6 and (
                     (23 <= time_now.hour or time_now.hour <= 6) and user.night_writing or 6 < time_now.hour < 23):
-                bot.send_message(user.tg_id, text)
+                bot.send_message(task.tg_id, text)
         except Exception as ex:
             print(ex)
 
