@@ -639,7 +639,7 @@ def callback_worker(call):
             bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
                                   reply_markup=buttons_creator(key_dict))
         else:
-            user = session.query(User).filter(call.message.chat.id == User.id).first()
+            user = session.query(User).filter(call.message.chat.id == User.tg_id).first()
             keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
                                          ["Изменить часовой пояс",
                                           f"Уведомления ночью: {'on' if user.night_writing else 'off'}"],
