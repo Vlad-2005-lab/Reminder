@@ -435,7 +435,7 @@ def main_menu(message):
             bot.send_message(message.from_user.id, text, reply_markup=buttons_creator(key_dict))
         else:
             text = "У вас нет напоминаний"
-            bot.send_message(message.from_user.id, text, reply_markup=keyboard_creator(keyboard))
+            bot.send_message(message.from_user.id, text, reply_markup=keyboard)
     elif message.text == "Изменить часовой пояс":
         keyboard = keyboard_creator(["МСК - 1, (UTC +2)",
                                      "МСК, (UTC +3)",
