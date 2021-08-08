@@ -29,7 +29,7 @@ count = -1
 history = True
 timezones = ["Europe/Kaliningrad", "Europe/Moscow", "Europe/Samara", "Asia/Yekaterinburg", "Asia/Omsk",
              "Asia/Krasnoyarsk",
-             "Asia/Irkutsk", "Asia/Chita", "Asia/Vladivostok", "Asia/Magadan", "Asia/Anadyr"]
+              "Asia/Irkutsk", "Asia/Chita", "Asia/Vladivostok", "Asia/Magadan", "Asia/Anadyr", "Africa/Abidjan"]
 
 
 def log(message=None, where='ne napisal', full=False, comments="None"):
