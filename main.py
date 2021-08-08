@@ -378,7 +378,7 @@ def check(message):
                          f"Досвидания",
                          reply_markup=types.ReplyKeyboardRemove())
         bot.send_sticker(message.from_user.id,
-                         'CAACAgQAAxkBAAECtLxhD6Cf-LnR6qtYzfUc6xt6lOI93AACQQEAAqghIQavZsYbbe5LiyA')
+                         'CAACAgQAAxkBAAECtLxhD6Cf-LnR6qtYzfUc6xt6lOI93AACQQEAAqghIQavZsYbbe5LiyAE')
         return bot.register_next_step_handler(message, get_text_messages)
     elif message.text == "Нет":
         keyboard = keyboard_creator([["Создать напоминание", "Мои напоминания"],
@@ -638,9 +638,9 @@ def callback_worker(call):
         bot.edit_message_text(text, call.message.chat.id, call.message.message_id,
                               reply_markup=buttons_creator(key_dict))
     elif call.data == "change_name":
-        pass
+        bot.send_message(call.message.chat.id, f"Эта функция находится в разработке")
     elif call.data == "change_date":
-        pass
+        bot.send_message(call.message.chat.id, f"Эта функция находится в разработке")
     elif call.data.isdigit():
         nomer = int(call.data)
         _list = session.query(Task).filter(Task.tg_id == call.message.chat.id).all()
