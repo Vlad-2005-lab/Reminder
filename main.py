@@ -413,7 +413,7 @@ def main_menu(message):
         return bot.register_next_step_handler(message, task_user)
     elif message.text == "Мои напоминания":
         keyboard = keyboard_creator([f"Вернуться в меню {emojize(SMILE[1], use_aliases=True)}"])
-        bot.send_message(message.from_user.id, f"Начинаем поиск", reply_markup=keyboard)
+        bot.send_message(message.from_user.id, f"Ваши напоминания:", reply_markup=keyboard)
         list_poiska = session.query(Task).filter(message.from_user.id == Task.tg_id).all()
         if len(list_poiska) != 0:
             key_dict = {'1': {}}
